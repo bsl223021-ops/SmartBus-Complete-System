@@ -1,1 +1,0 @@
-// GPS Log Repository Interface - Placeholder content
