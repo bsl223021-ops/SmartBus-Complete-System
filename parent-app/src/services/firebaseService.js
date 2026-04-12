@@ -33,8 +33,8 @@ const firebaseConfig = {
   authDomain: "smartbus-project-ed975.firebaseapp.com",
   projectId: "smartbus-project-ed975",
   storageBucket: "smartbus-project-ed975.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
 let app;
