@@ -12,6 +12,10 @@ import { calculateDistance } from "../../services/locationService";
 
 const AVG_SPEED_KMH = 30;
 
+// Default destination coordinates (school location) — update to your school's coordinates
+const SCHOOL_LATITUDE = 23.0225;
+const SCHOOL_LONGITUDE = 72.5714;
+
 function etaMinutes(busLat, busLng, destLat, destLng) {
   if (!busLat || !destLat) return null;
   const dist = calculateDistance(busLat, busLng, destLat, destLng);
@@ -55,7 +59,7 @@ export default function TrackingScreen() {
   }, [parentProfile]);
 
   const eta = location
-    ? etaMinutes(location.latitude, location.longitude, 23.0225, 72.5714)
+    ? etaMinutes(location.latitude, location.longitude, SCHOOL_LATITUDE, SCHOOL_LONGITUDE)
     : null;
 
   if (loading) {

@@ -4,6 +4,8 @@ import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { getMessaging } from "firebase/messaging";
 
+// Update messagingSenderId and appId with values from Firebase Console:
+// Project Settings → General → Your apps → Web/Android app
 const firebaseConfig = {
   apiKey: "AIzaSyCbTpfzysWKldwr2PLkt6bO1zZAwpbHxY4",
   authDomain: "smartbus-project-ed975.firebaseapp.com",

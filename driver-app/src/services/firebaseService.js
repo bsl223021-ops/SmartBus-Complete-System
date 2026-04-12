@@ -26,6 +26,8 @@ import {
 } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+// Update messagingSenderId and appId with values from Firebase Console:
+// Project Settings → General → Your apps → Android/iOS app
 const firebaseConfig = {
   apiKey: "AIzaSyCbTpfzysWKldwr2PLkt6bO1zZAwpbHxY4",
   authDomain: "smartbus-project-ed975.firebaseapp.com",

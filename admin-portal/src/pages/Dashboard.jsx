@@ -11,7 +11,7 @@ import {
 } from "chart.js";
 import { Doughnut, Bar } from "react-chartjs-2";
 import StatsCard from "../components/StatsCard";
-import { getDashboardStats, subscribeToStudents, subscribeToBuses } from "../services/firebaseService";
+import { getDashboardStats, getAttendanceByDate } from "../services/firebaseService";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -33,24 +33,25 @@ export default function Dashboard() {
         const data = await getDashboardStats();
         setStats(data);
 
-        const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-        const present = days.map(() => Math.floor(Math.random() * 30 + 50));
-        const absent = days.map((_, i) => data.totalStudents - present[i] < 0 ? 0 : data.totalStudents - present[i]);
+        // Build weekly attendance from real Firestore data (last 7 days)
+        const days = [];
+        const labels = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          days.push(d.toISOString().slice(0, 10));
+          labels.push(d.toLocaleDateString("en-US", { weekday: "short" }));
+        }
+
+        const dailyRecords = await Promise.all(days.map((date) => getAttendanceByDate(date)));
+        const presentCounts = dailyRecords.map((records) => records.filter((r) => r.status === "present").length);
+        const absentCounts = dailyRecords.map((records) => records.filter((r) => r.status === "absent").length);
+
         setWeeklyData({
-          labels: days,
+          labels,
           datasets: [
-            {
-              label: "Present",
-              data: present,
-              backgroundColor: "rgba(59, 130, 246, 0.7)",
-              borderRadius: 4,
-            },
-            {
-              label: "Absent",
-              data: absent,
-              backgroundColor: "rgba(239, 68, 68, 0.7)",
-              borderRadius: 4,
-            },
+            { label: "Present", data: presentCounts, backgroundColor: "rgba(59, 130, 246, 0.7)", borderRadius: 4 },
+            { label: "Absent", data: absentCounts, backgroundColor: "rgba(239, 68, 68, 0.7)", borderRadius: 4 },
           ],
         });
       } catch (err) {
