@@ -1,7 +1,15 @@
-import javax.persistence.*;
+package com.smartbus.models;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "students")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Student {
 
     @Id
@@ -26,82 +34,16 @@ public class Student {
     @Column(name = "section")
     private String section;
 
-    @Column(name = "qr_code")
+    @Column(name = "qr_code", length = 1000)
     private String qrCode;
 
     @Column(name = "boarding_point")
     private String boardingPoint;
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bus_id")
+    private Bus assignedBus;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getRollNumber() {
-        return rollNumber;
-    }
-
-    public void setRollNumber(String rollNumber) {
-        this.rollNumber = rollNumber;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getParentEmail() {
-        return parentEmail;
-    }
-
-    public void setParentEmail(String parentEmail) {
-        this.parentEmail = parentEmail;
-    }
-
-    public String getParentPhone() {
-        return parentPhone;
-    }
-
-    public void setParentPhone(String parentPhone) {
-        this.parentPhone = parentPhone;
-    }
-
-    public String getGrade() {
-        return grade;
-    }
-
-    public void setGrade(String grade) {
-        this.grade = grade;
-    }
-
-    public String getSection() {
-        return section;
-    }
-
-    public void setSection(String section) {
-        this.section = section;
-    }
-
-    public String getQrCode() {
-        return qrCode;
-    }
-
-    public void setQrCode(String qrCode) {
-        this.qrCode = qrCode;
-    }
-
-    public String getBoardingPoint() {
-        return boardingPoint;
-    }
-
-    public void setBoardingPoint(String boardingPoint) {
-        this.boardingPoint = boardingPoint;
-    }
+    @Column(name = "active")
+    private Boolean active = true;
 }

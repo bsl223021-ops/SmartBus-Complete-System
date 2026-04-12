@@ -1,81 +1,37 @@
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.Column;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
+package com.smartbus.models;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
+@Table(name = "route_stoppages")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class RouteStoppage {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "route_stoppage_sequence")
-    @SequenceGenerator(name = "route_stoppage_sequence", sequenceName = "route_stoppage_sequence", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "route_id", nullable = false)
     private Route route;
 
-    @ManyToOne
-    private Stoppage stoppage;
+    @Column(name = "stoppage_name", nullable = false)
+    private String stoppageName;
 
     @Column(name = "latitude")
-    private double latitude;
+    private Double latitude;
 
     @Column(name = "longitude")
-    private double longitude;
+    private Double longitude;
 
-    @Column(name = "sequence")
-    private int sequence;
+    @Column(name = "sequence_order")
+    private Integer sequenceOrder;
 
-    // Getters and Setters
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Route getRoute() {
-        return route;
-    }
-
-    public void setRoute(Route route) {
-        this.route = route;
-    }
-
-    public Stoppage getStoppage() {
-        return stoppage;
-    }
-
-    public void setStoppage(Stoppage stoppage) {
-        this.stoppage = stoppage;
-    }
-
-    public double getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
-    }
-
-    public int getSequence() {
-        return sequence;
-    }
-
-    public void setSequence(int sequence) {
-        this.sequence = sequence;
-    }
+    @Column(name = "estimated_arrival_time")
+    private String estimatedArrivalTime;
 }
