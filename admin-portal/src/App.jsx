@@ -9,10 +9,12 @@ import BusManagement from "./pages/BusManagement";
 import RouteManagement from "./pages/RouteManagement";
 import AttendanceTracking from "./pages/AttendanceTracking";
 import DriverManagement from "./pages/DriverManagement";
+import TripManagement from "./pages/TripManagement";
+import ProfilePage from "./pages/ProfilePage";
 
 function ProtectedLayout({ children }) {
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
       <Navigation />
       <main className="flex-1 overflow-auto">{children}</main>
     </div>
@@ -29,8 +31,21 @@ export default function App() {
 
   if (user === undefined) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center"
+            style={{ background: "#FFC107" }}
+          >
+            <svg className="w-7 h-7 text-black" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M4 16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-3-2-5-5-5H9C6 3 4 5 4 8v8z" />
+            </svg>
+          </div>
+          <div
+            className="animate-spin rounded-full h-8 w-8 border-b-2"
+            style={{ borderColor: "#FFC107" }}
+          />
+        </div>
       </div>
     );
   }
@@ -60,8 +75,16 @@ export default function App() {
           element={user ? <ProtectedLayout><DriverManagement /></ProtectedLayout> : <Navigate to="/login" replace />}
         />
         <Route
+          path="/trips"
+          element={user ? <ProtectedLayout><TripManagement /></ProtectedLayout> : <Navigate to="/login" replace />}
+        />
+        <Route
           path="/attendance"
           element={user ? <ProtectedLayout><AttendanceTracking /></ProtectedLayout> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/profile"
+          element={user ? <ProtectedLayout><ProfilePage /></ProtectedLayout> : <Navigate to="/login" replace />}
         />
         <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
       </Routes>

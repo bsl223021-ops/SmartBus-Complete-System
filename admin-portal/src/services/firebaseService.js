@@ -212,3 +212,28 @@ export const getUserProfile = async (uid) => {
   const snap = await getDoc(doc(db, "users", uid));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 };
+
+// ─── Trips ───────────────────────────────────────────────────────────────────
+export const getTrips = async () => {
+  const snap = await getDocs(query(collection(db, "trips"), orderBy("createdAt", "desc")));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+export const subscribeToTrips = (callback) => {
+  return onSnapshot(
+    query(collection(db, "trips"), orderBy("createdAt", "desc")),
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+  );
+};
+
+export const addTrip = async (data) => {
+  return addDoc(collection(db, "trips"), { ...data, createdAt: serverTimestamp() });
+};
+
+export const updateTrip = async (id, data) => {
+  return updateDoc(doc(db, "trips", id), { ...data, updatedAt: serverTimestamp() });
+};
+
+export const deleteTrip = async (id) => {
+  return deleteDoc(doc(db, "trips", id));
+};
