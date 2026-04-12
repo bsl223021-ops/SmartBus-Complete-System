@@ -1,1 +1,1 @@
-// GPS Log Service Class - Placeholder content
+// See backend/src/main/java/com/smartbus/services/GPSLogService.java

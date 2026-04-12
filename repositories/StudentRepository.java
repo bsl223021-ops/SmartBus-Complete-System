@@ -1,1 +1,1 @@
-// Student Repository Interface - Placeholder content
+// See backend/src/main/java/com/smartbus/repositories/StudentRepository.java

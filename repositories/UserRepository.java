@@ -1,1 +1,1 @@
-// User Repository Interface - Placeholder content
+// See backend/src/main/java/com/smartbus/repositories/UserRepository.java

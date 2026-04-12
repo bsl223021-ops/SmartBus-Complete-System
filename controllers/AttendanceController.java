@@ -1,1 +1,1 @@
-// REST API Controller for Attendance - Placeholder content
+// See backend/src/main/java/com/smartbus/controllers/AttendanceController.java

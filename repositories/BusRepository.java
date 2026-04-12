@@ -1,1 +1,1 @@
-// Bus Repository Interface - Placeholder content
+// See backend/src/main/java/com/smartbus/repositories/BusRepository.java

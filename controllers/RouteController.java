@@ -1,1 +1,1 @@
-// REST API Controller for Routes - Placeholder content
+// See backend/src/main/java/com/smartbus/controllers/RouteController.java

@@ -1,0 +1,29 @@
+# Build artifacts
+backend/build/
+backend/.gradle/
+backend/gradle/wrapper/
+*.jar
+*.war
+*.class
+
+# Node
+node_modules/
+admin-portal/node_modules/
+driver-app/node_modules/
+parent-app/node_modules/
+admin-portal/build/
+admin-portal/dist/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local

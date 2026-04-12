@@ -1,1 +1,1 @@
-// GPS Log Repository Interface - Placeholder content
+// See backend/src/main/java/com/smartbus/repositories/GPSLogRepository.java

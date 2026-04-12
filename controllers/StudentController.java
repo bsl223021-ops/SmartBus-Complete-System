@@ -1,1 +1,1 @@
-// REST API Controller for Students - Placeholder content
+// See backend/src/main/java/com/smartbus/controllers/StudentController.java

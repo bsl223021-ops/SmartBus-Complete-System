@@ -1,1 +1,1 @@
-// REST API Controller for GPS logs - Placeholder content
+// See backend/src/main/java/com/smartbus/controllers/GPSLogController.java

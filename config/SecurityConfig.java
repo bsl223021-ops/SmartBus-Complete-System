@@ -1,1 +1,1 @@
-// Spring Security Configuration - Placeholder content
+// See backend/src/main/java/com/smartbus/config/SecurityConfig.java

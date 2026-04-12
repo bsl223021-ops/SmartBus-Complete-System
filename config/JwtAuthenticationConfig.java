@@ -1,1 +1,1 @@
-// JWT Authentication Configuration - Placeholder content
+// See backend/src/main/java/com/smartbus/config/JwtAuthenticationConfig.java
