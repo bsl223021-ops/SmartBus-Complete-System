@@ -1,1 +1,0 @@
-// Custom Exception - Placeholder content

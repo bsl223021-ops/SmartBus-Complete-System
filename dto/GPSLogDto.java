@@ -1,1 +1,0 @@
-// GPS Log DTO - Placeholder content
