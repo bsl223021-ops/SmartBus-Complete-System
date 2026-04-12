@@ -1,0 +1,1 @@
+// User Repository Interface - Placeholder content

@@ -1,0 +1,1 @@
+// REST API Controller for GPS logs - Placeholder content

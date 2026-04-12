@@ -1,0 +1,1 @@
+// GPS Log Service Class - Placeholder content
