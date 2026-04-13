@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { onAuthChange, getDriverProfile, syncDriverDocument } from "../services/firebaseService";
+import { onAuthChange, getDriverProfile, syncDriverDocument, syncBusDriverId } from "../services/firebaseService";
 
 const AuthContext = createContext(null);
 
@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
           await syncDriverDocument(firebaseUser);
           const profile = await getDriverProfile(firebaseUser.uid);
           setDriverProfile(profile);
+          await syncBusDriverId(firebaseUser.email, firebaseUser.uid);
         } catch (err) {
           console.warn("Failed to load driver profile:", err.message);
         }
