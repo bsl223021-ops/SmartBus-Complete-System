@@ -22,7 +22,12 @@ function formatTime(ts) {
 }
 
 function isResolved(alert) {
-  return alert.status === "resolved" || alert.resolved === true;
+  if (!alert) return false;
+  const byStatus = alert.status === "resolved";
+  const byField = alert.resolved === true;
+  const result = byStatus || byField;
+  console.log("[isResolved] id:", alert.id, "status:", alert.status, "resolved field:", alert.resolved, "=>", result);
+  return result;
 }
 
 export default function AlertsManagement() {
@@ -174,6 +179,8 @@ export default function AlertsManagement() {
               {filtered.map((alert) => {
                 const meta = ALERT_TYPE_META[alert.type] || ALERT_TYPE_META.other;
                 const resolved = isResolved(alert);
+                const showResolveBtn = alert.status === "active" || alert.resolved === false || !resolved;
+                console.log("[AlertsManagement] Row -", alert.id, "| status:", alert.status, "| resolved field:", alert.resolved, "| isResolved:", resolved, "| showResolveBtn:", showResolveBtn);
                 return (
                   <tr key={alert.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
@@ -218,13 +225,13 @@ export default function AlertsManagement() {
                         >
                           View
                         </button>
-                        {!resolved && (
+                        {showResolveBtn && (
                           <button
-                            onClick={() => handleResolve(alert.id)}
+                            onClick={() => { console.log("[AlertsManagement] Resolve clicked for id:", alert.id); handleResolve(alert.id); }}
                             disabled={resolvingId === alert.id}
                             className="px-2 py-1 rounded-lg text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50"
                           >
-                            {resolvingId === alert.id ? "…" : "Resolve"}
+                            {resolvingId === alert.id ? "⏳ Resolving…" : "✅ Resolve"}
                           </button>
                         )}
                       </div>
@@ -352,12 +359,12 @@ export default function AlertsManagement() {
               </button>
               {!isResolved(detailAlert) && (
                 <button
-                  onClick={() => handleResolve(detailAlert.id)}
+                  onClick={() => { console.log("[AlertsManagement] Modal resolve clicked for id:", detailAlert.id); handleResolve(detailAlert.id); }}
                   disabled={resolvingId === detailAlert.id}
                   className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
                   style={{ backgroundColor: "#059669" }}
                 >
-                  {resolvingId === detailAlert.id ? "Resolving…" : "✅ Mark as Resolved"}
+                  {resolvingId === detailAlert.id ? "⏳ Resolving…" : "✅ Mark as Resolved"}
                 </button>
               )}
             </div>
