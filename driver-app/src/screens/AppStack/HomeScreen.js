@@ -4,7 +4,7 @@ import {
   StyleSheet, Alert, ActivityIndicator, RefreshControl,
 } from "react-native";
 import { useAuth } from "../../context/AuthContext";
-import { getAssignedBus, subscribeToStudentsForBus } from "../../services/firebaseService";
+import { getAssignedBus, subscribeToStudentsForBus, endTrip } from "../../services/firebaseService";
 
 export default function HomeScreen({ navigation }) {
   const { user, driverProfile } = useAuth();
@@ -12,6 +12,7 @@ export default function HomeScreen({ navigation }) {
   const [students, setStudents] = useState([]);
   const [loadingBus, setLoadingBus] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [endingTrip, setEndingTrip] = useState(false);
 
   const loadBus = async () => {
     console.log("[HomeScreen] loadBus called");
@@ -44,6 +45,43 @@ export default function HomeScreen({ navigation }) {
     setRefreshing(true);
     await loadBus();
     setRefreshing(false);
+  };
+
+  const handleEndTrip = () => {
+    if (!bus) {
+      Alert.alert("No Bus", "You don't have an assigned bus to end a trip for.");
+      return;
+    }
+    Alert.alert(
+      "End Trip",
+      "Are you sure you want to end this trip?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "End Trip",
+          style: "destructive",
+          onPress: async () => {
+            setEndingTrip(true);
+            try {
+              const summary = await endTrip({
+                busId: bus.id,
+                driverId: user.uid,
+                totalStudents: students.length,
+              });
+              Alert.alert(
+                "✅ Trip Completed!",
+                `Total Students: ${summary.totalStudents}\nPresent: ${summary.presentCount}\nAbsent: ${summary.absentCount}\nTrip ended at: ${summary.endTime}`
+              );
+            } catch (err) {
+              console.error("[HomeScreen] endTrip error:", err.message);
+              Alert.alert("Error", "Could not end the trip. Please try again.");
+            } finally {
+              setEndingTrip(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loadingBus) {
@@ -95,6 +133,14 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.actionEmoji}>📋</Text>
           <Text style={styles.actionText}>History</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionBtn, { backgroundColor: "#DC2626" }, endingTrip && styles.actionBtnDisabled]}
+          onPress={handleEndTrip}
+          disabled={endingTrip}
+        >
+          <Text style={styles.actionEmoji}>{endingTrip ? "⏳" : "🏁"}</Text>
+          <Text style={styles.actionText}>{endingTrip ? "Ending..." : "End Trip"}</Text>
+        </TouchableOpacity>
       </View>
 
       <Text style={styles.sectionTitle}>Students ({students.length})</Text>
@@ -136,7 +182,8 @@ const styles = StyleSheet.create({
   noBusText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
   noBusSubText: { color: "rgba(255,255,255,0.75)", fontSize: 13, marginTop: 4 },
   actionsRow: { flexDirection: "row", justifyContent: "space-around", padding: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#E5E7EB" },
-  actionBtn: { alignItems: "center", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20 },
+  actionBtn: { alignItems: "center", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16 },
+  actionBtnDisabled: { opacity: 0.6 },
   actionEmoji: { fontSize: 24 },
   actionText: { color: "#fff", fontSize: 12, fontWeight: "600", marginTop: 4 },
   sectionTitle: { fontSize: 16, fontWeight: "bold", color: "#374151", padding: 16, paddingBottom: 8 },

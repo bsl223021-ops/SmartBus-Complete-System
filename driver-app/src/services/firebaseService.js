@@ -299,6 +299,51 @@ export const getAttendanceHistory = async (driverId, days = 7) => {
   return results;
 };
 
+// ─── Trips ────────────────────────────────────────────────────────────────────
+export const endTrip = async ({ busId, driverId, totalStudents }) => {
+  console.log("[endTrip] Starting end trip for busId:", busId, "driverId:", driverId);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date().toTimeString().slice(0, 5);
+
+  // Fetch all attendance records for today for this bus
+  const q = query(
+    collection(db, "attendance"),
+    where("busId", "==", busId),
+    where("date", "==", today)
+  );
+  const snap = await getDocs(q);
+  const records = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  console.log("[endTrip] Attendance records today:", records.length);
+
+  const presentCount = records.filter((r) => r.status === "present").length;
+  const absentCount = records.filter((r) => r.status === "absent").length;
+
+  // Determine startTime from the earliest boardTime across all attendance records
+  let startTime = now;
+  const boardTimes = records.map((r) => r.boardTime).filter(Boolean);
+  if (boardTimes.length > 0) {
+    startTime = boardTimes.slice().sort()[0];
+  }
+
+  const tripData = {
+    busId,
+    driverId,
+    date: today,
+    startTime,
+    endTime: now,
+    totalStudents: totalStudents ?? 0,
+    presentCount,
+    absentCount,
+    createdAt: serverTimestamp(),
+  };
+
+  const tripRef = await addDoc(collection(db, "trips"), tripData);
+  console.log("[endTrip] Trip document created:", tripRef.id);
+
+  return { id: tripRef.id, ...tripData };
+};
+
 // ─── GPS ──────────────────────────────────────────────────────────────────────
 export const updateBusLocation = async (busId, driverId, latitude, longitude) => {
   const locationData = {
