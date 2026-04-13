@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getDrivers, addDriver, updateDriver, deleteDriver } from "../services/firebaseService";
 import FilterBar from "../components/FilterBar";
 
-const EMPTY_FORM = { name: "", email: "", phone: "", licenseNumber: "", status: "active", busId: "" };
+const EMPTY_FORM = { name: "", email: "", phone: "", licenseNumber: "", status: "active", busId: "", uid: "" };
 const INPUT = "input-field";
 const SELECT = "select-field";
 
@@ -38,9 +38,22 @@ export default function DriverManagement() {
     setError("");
     try {
       if (editingId) {
-        await updateDriver(editingId, form);
+        const { uid: _uid, ...updateData } = form;
+        await updateDriver(editingId, updateData);
       } else {
-        await addDriver(form);
+        if (!form.uid.trim()) {
+          setError("Firebase Auth UID is required. Copy it from Firebase Console → Authentication → Users.");
+          setLoading(false);
+          return;
+        }
+        const trimmedUid = form.uid.trim();
+        if (!/^[A-Za-z0-9]{20,36}$/.test(trimmedUid)) {
+          setError("Invalid Firebase Auth UID format. It should be a 20–36 character alphanumeric string.");
+          setLoading(false);
+          return;
+        }
+        const { uid, ...driverData } = form;
+        await addDriver(driverData, trimmedUid);
       }
       await loadDrivers();
       closeModal();
@@ -164,6 +177,31 @@ export default function DriverManagement() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">License Number</label>
                   <input placeholder="e.g. DL-1234567" value={form.licenseNumber} onChange={(e) => setForm({ ...form, licenseNumber: e.target.value })} className={INPUT} />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Firebase Auth UID {!editingId && <span className="text-red-500">*</span>}
+                  </label>
+                  {editingId ? (
+                    <input
+                      value={editingId}
+                      readOnly
+                      className="input-field bg-gray-50 text-gray-500 cursor-not-allowed"
+                    />
+                  ) : (
+                    <input
+                      required
+                      placeholder="e.g. 9J5p4cdquJQNyWbeCMfk4jANMDr2"
+                      value={form.uid}
+                      onChange={(e) => setForm({ ...form, uid: e.target.value })}
+                      className={INPUT}
+                    />
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {editingId
+                      ? "The document ID cannot be changed after creation."
+                      : "Copy the User UID from Firebase Console → Authentication → Users → Select user → Copy UID (20–36 alphanumeric characters)"}
+                  </p>
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
