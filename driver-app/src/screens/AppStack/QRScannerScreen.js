@@ -90,7 +90,6 @@ export default function QRScannerScreen({ navigation }) {
       <Camera
         style={StyleSheet.absoluteFillObject}
         onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-        barCodeScannerSettings={{ barCodeTypes: ["qr"] }}
       />
 
       <View style={styles.overlay}>
