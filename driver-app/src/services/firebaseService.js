@@ -76,6 +76,57 @@ export const registerDriver = async (email, password, name, phone) => {
 export const logoutDriver = () => signOut(auth);
 export const onAuthChange = (cb) => onAuthStateChanged(auth, cb);
 
+// ─── Bus Driver Sync ──────────────────────────────────────────────────────────
+export const syncBusDriverId = async (oldDriverEmail, newAuthUid) => {
+  if (!oldDriverEmail || !newAuthUid) return;
+
+  console.log("[syncBusDriverId] Looking for buses to sync for driver:", oldDriverEmail);
+  try {
+    // Find any driver documents with this email that have a different (old) ID
+    const driverQuery = query(collection(db, "drivers"), where("email", "==", oldDriverEmail));
+    const driverSnap = await getDocs(driverQuery);
+
+    const oldDriverIds = driverSnap.docs
+      .filter((d) => d.id !== newAuthUid)
+      .map((d) => d.id);
+
+    if (oldDriverIds.length === 0) {
+      console.log("[syncBusDriverId] No old driver IDs found for email:", oldDriverEmail);
+      return;
+    }
+
+    console.log("[syncBusDriverId] Found old driver IDs to migrate:", oldDriverIds);
+
+    // For each old driver ID, find and update buses that still reference it
+    for (const oldId of oldDriverIds) {
+      const busQuery = query(collection(db, "buses"), where("driverId", "==", oldId));
+      const busSnap = await getDocs(busQuery);
+
+      if (busSnap.empty) {
+        console.log("[syncBusDriverId] No buses found with old driverId:", oldId);
+        continue;
+      }
+
+      console.log("[syncBusDriverId] Found", busSnap.size, "bus(es) with old driverId:", oldId);
+      for (const busDoc of busSnap.docs) {
+        try {
+          await updateDoc(doc(db, "buses", busDoc.id), {
+            driverId: newAuthUid,
+            updatedAt: serverTimestamp(),
+          });
+          console.log("[syncBusDriverId] Updated bus", busDoc.id, "driverId:", oldId, "→", newAuthUid);
+        } catch (err) {
+          console.error("[syncBusDriverId] Failed to update bus", busDoc.id, ":", err.message);
+        }
+      }
+    }
+
+    console.log("[syncBusDriverId] Bus driverId sync complete for:", oldDriverEmail);
+  } catch (err) {
+    console.error("[syncBusDriverId] Error during bus sync:", err.message);
+  }
+};
+
 // ─── Driver Sync ─────────────────────────────────────────────────────────────
 export const syncDriverDocument = async (firebaseUser) => {
   if (!firebaseUser) return;
@@ -98,6 +149,8 @@ export const syncDriverDocument = async (firebaseUser) => {
     const oldDoc = emailSnap.docs[0];
     // Guard: skip if the found doc is already the UID-keyed document
     if (oldDoc.id !== uid) {
+      // Sync bus documents to use the new Auth UID before the old driver doc is removed
+      await syncBusDriverId(email, uid);
       // Preserve all existing fields from the old document
       const oldData = oldDoc.data();
       await setDoc(uidDocRef, {
