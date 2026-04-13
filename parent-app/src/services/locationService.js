@@ -31,10 +31,14 @@ export const getDirectionLabel = (bearing) => {
 };
 
 // Returns a status string based on distance (km) and optional speed (m/s)
+const ARRIVING_DISTANCE_KM = 0.2;  // bus is "arriving" when within 200 m of school
+const NEARBY_DISTANCE_KM = 1.0;    // bus is "nearby" when within 1 km of school
+const STOPPED_SPEED_KMH = 1;       // bus considered stopped below 1 km/h
+
 export const getBusStatus = (distanceKm, speedMs) => {
   const speedKmh = speedMs != null ? speedMs * 3.6 : null;
-  if (distanceKm < 0.2) return "arriving";
-  if (distanceKm < 1) return "nearby";
-  if (speedKmh != null && speedKmh < 1) return "stopped";
+  if (distanceKm < ARRIVING_DISTANCE_KM) return "arriving";
+  if (distanceKm < NEARBY_DISTANCE_KM) return "nearby";
+  if (speedKmh != null && speedKmh < STOPPED_SPEED_KMH) return "stopped";
   return "on_way";
 };

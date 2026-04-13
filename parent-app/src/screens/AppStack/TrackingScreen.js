@@ -32,6 +32,7 @@ const SCHOOL_LONGITUDE = 72.5714;
 function etaMinutes(busLat, busLng, destLat, destLng, speedKmh) {
   if (!busLat || !destLat) return null;
   const dist = calculateDistance(busLat, busLng, destLat, destLng);
+  if (dist < 0.05) return 0; // already at school
   const effectiveSpeed = speedKmh && speedKmh > 2 ? speedKmh : AVG_SPEED_KMH;
   return Math.max(1, Math.round((dist / effectiveSpeed) * 60));
 }
@@ -56,6 +57,7 @@ export default function TrackingScreen() {
 
   const mapRef = useRef(null);
   const locationUnsubRef = useRef(null);
+  const refreshingRef = useRef(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Pulsing animation for the live bus marker
@@ -84,6 +86,11 @@ export default function TrackingScreen() {
           ].slice(-MAX_TRAIL_POINTS);
           return next;
         });
+        // Clear refresh spinner once we receive new data
+        if (refreshingRef.current) {
+          refreshingRef.current = false;
+          setRefreshing(false);
+        }
       });
     },
     []
@@ -130,11 +137,18 @@ export default function TrackingScreen() {
     }
   }, [location?.latitude, location?.longitude]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = () => {
     if (!bus?.id || refreshing) return;
+    refreshingRef.current = true;
     setRefreshing(true);
     subscribeToLocation(bus.id);
-    setTimeout(() => setRefreshing(false), 1500);
+    // Fallback: clear spinner after 5s if no callback fires (e.g. no bus data)
+    setTimeout(() => {
+      if (refreshingRef.current) {
+        refreshingRef.current = false;
+        setRefreshing(false);
+      }
+    }, 5000);
   };
 
   // ── Derived values ──────────────────────────────────────────────────────────
@@ -310,7 +324,7 @@ export default function TrackingScreen() {
         <View style={[styles.infoCard, styles.infoCardHighlight]}>
           <Text style={styles.infoCardEmoji}>⏱</Text>
           <Text style={[styles.infoCardValue, { color: "#059669" }]}>
-            {eta != null ? `${eta} min` : "—"}
+            {eta != null ? (eta === 0 ? "Arrived" : `${eta} min`) : "—"}
           </Text>
           <Text style={styles.infoCardLabel}>ETA</Text>
         </View>
