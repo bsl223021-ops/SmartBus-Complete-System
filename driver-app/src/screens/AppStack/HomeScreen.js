@@ -32,8 +32,8 @@ export default function HomeScreen({ navigation }) {
   };
 
   useEffect(() => {
-    let unsubStudents;
-    let unsubAlerts;
+    let unsubStudents = null;
+    let unsubAlerts = null;
     loadBus().then((assignedBus) => {
       if (assignedBus) {
         unsubStudents = subscribeToStudentsForBus(assignedBus.id, setStudents);
@@ -44,8 +44,8 @@ export default function HomeScreen({ navigation }) {
       }
     });
     return () => {
-      unsubStudents && unsubStudents();
-      unsubAlerts && unsubAlerts();
+      if (unsubStudents) unsubStudents();
+      if (unsubAlerts) unsubAlerts();
     };
   }, []);
 

@@ -214,6 +214,24 @@ export const updateAlert = async (alertId, data) => {
   return updateDoc(doc(db, "alerts", alertId), { ...data, updatedAt: serverTimestamp() });
 };
 
+export const resolveAlert = async (alertId) => {
+  return updateDoc(doc(db, "alerts", alertId), {
+    status: "resolved",
+    resolved: true,
+    resolvedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const reopenAlert = async (alertId) => {
+  return updateDoc(doc(db, "alerts", alertId), {
+    status: "open",
+    resolved: false,
+    resolvedAt: null,
+    updatedAt: serverTimestamp(),
+  });
+};
+
 export const deleteAlert = async (alertId) => {
   return deleteDoc(doc(db, "alerts", alertId));
 };

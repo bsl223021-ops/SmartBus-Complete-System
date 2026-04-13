@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { subscribeToAlerts, updateAlert, deleteAlert } from "../services/firebaseService";
+import { subscribeToAlerts, resolveAlert, reopenAlert, deleteAlert } from "../services/firebaseService";
 
 const TYPE_LABELS = {
   emergency: { label: "Emergency", color: "#DC2626", bg: "#FEE2E2" },
@@ -85,11 +85,7 @@ export default function AlertManagement() {
   const handleResolve = async (alert) => {
     setActionLoading(alert.id);
     try {
-      await updateAlert(alert.id, {
-        status: "resolved",
-        resolved: true,
-        resolvedAt: new Date().toISOString(),
-      });
+      await resolveAlert(alert.id);
     } finally {
       setActionLoading(null);
     }
@@ -98,11 +94,7 @@ export default function AlertManagement() {
   const handleReopen = async (alert) => {
     setActionLoading(alert.id);
     try {
-      await updateAlert(alert.id, {
-        status: "open",
-        resolved: false,
-        resolvedAt: null,
-      });
+      await reopenAlert(alert.id);
     } finally {
       setActionLoading(null);
     }
