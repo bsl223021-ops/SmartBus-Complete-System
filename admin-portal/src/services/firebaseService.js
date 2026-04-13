@@ -14,6 +14,8 @@ import {
   onSnapshot,
   serverTimestamp,
   setDoc,
+  writeBatch,
+  deleteField,
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -70,7 +72,30 @@ export const addBus = async (data) => {
 };
 
 export const updateBus = async (id, data) => {
-  return updateDoc(doc(db, "buses", id), { ...data, updatedAt: serverTimestamp() });
+  const batch = writeBatch(db);
+  const busRef = doc(db, "buses", id);
+
+  // Get current bus data to determine the previous driverId
+  const busSnap = await getDoc(busRef);
+  const oldDriverId = busSnap.exists() ? busSnap.data().driverId : null;
+  const newDriverId = data.driverId;
+
+  // Update the bus document
+  batch.update(busRef, { ...data, updatedAt: serverTimestamp() });
+
+  // Remove busId from the old driver if the driver is being changed or removed
+  if (oldDriverId && oldDriverId !== newDriverId) {
+    const oldDriverRef = doc(db, "drivers", oldDriverId);
+    batch.set(oldDriverRef, { busId: deleteField(), updatedAt: serverTimestamp() }, { merge: true });
+  }
+
+  // Set busId on the new driver if a new driver is being assigned
+  if (newDriverId && newDriverId !== oldDriverId) {
+    const newDriverRef = doc(db, "drivers", newDriverId);
+    batch.set(newDriverRef, { busId: id, updatedAt: serverTimestamp() }, { merge: true });
+  }
+
+  return batch.commit();
 };
 
 export const deleteBus = async (id) => {
