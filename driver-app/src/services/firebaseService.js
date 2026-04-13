@@ -210,10 +210,39 @@ export const getStudentsForBus = async (busId) => {
 };
 
 export const subscribeToStudentsForBus = (busId, callback) => {
-  return onSnapshot(
+  console.log("[subscribeToStudentsForBus] Subscribing for busId:", busId);
+
+  let activeUnsub = onSnapshot(
     query(collection(db, "students"), where("busId", "==", busId), orderBy("name")),
-    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    (snap) => {
+      console.log("[subscribeToStudentsForBus] Snapshot received, count:", snap.size);
+      callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    },
+    (err) => {
+      console.error("[subscribeToStudentsForBus] Snapshot error:", err.message, err.code);
+      // Only fall back when the composite index is missing (failed-precondition)
+      if (err.code === "failed-precondition") {
+        // Original listener is already terminated by Firestore after the error callback;
+        // start a fallback subscription without orderBy and sort client-side.
+        activeUnsub = onSnapshot(
+          query(collection(db, "students"), where("busId", "==", busId)),
+          (snap) => {
+            console.log("[subscribeToStudentsForBus] Fallback snapshot received, count:", snap.size);
+            const sorted = snap.docs
+              .map((d) => ({ id: d.id, ...d.data() }))
+              .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+            callback(sorted);
+          },
+          (fallbackErr) => {
+            console.error("[subscribeToStudentsForBus] Fallback error:", fallbackErr.message);
+          }
+        );
+      }
+    }
   );
+
+  // Return a stable unsubscribe that always cancels whichever listener is currently active.
+  return () => activeUnsub && activeUnsub();
 };
 
 // ─── Attendance ────────────────────────────────────────────────────────────────
