@@ -3,6 +3,7 @@ import {
   subscribeToAlerts,
   markAlertResolved,
   getParentInfo,
+  getBusById,
 } from "../services/firebaseService";
 
 const ALERT_TYPE_META = {
@@ -23,11 +24,7 @@ function formatTime(ts) {
 
 function isResolved(alert) {
   if (!alert) return false;
-  const byStatus = alert.status === "resolved";
-  const byField = alert.resolved === true;
-  const result = byStatus || byField;
-  console.log("[isResolved] id:", alert.id, "status:", alert.status, "resolved field:", alert.resolved, "=>", result);
-  return result;
+  return alert.status === "resolved" || alert.resolved === true;
 }
 
 export default function AlertsManagement() {
@@ -37,6 +34,7 @@ export default function AlertsManagement() {
   const [search, setSearch] = useState("");
   const [detailAlert, setDetailAlert] = useState(null);
   const [parentInfo, setParentInfo] = useState(null);
+  const [busInfo, setBusInfo] = useState(null);
   const [loadingParent, setLoadingParent] = useState(false);
   const [resolvingId, setResolvingId] = useState(null);
 
@@ -71,6 +69,7 @@ export default function AlertsManagement() {
   const handleViewDetail = async (alert) => {
     setDetailAlert(alert);
     setParentInfo(null);
+    setBusInfo(null);
     if (alert.parentUid || alert.parentId) {
       setLoadingParent(true);
       try {
@@ -78,6 +77,12 @@ export default function AlertsManagement() {
         setParentInfo(info);
       } catch (_) {}
       finally { setLoadingParent(false); }
+    }
+    if (alert.busId) {
+      try {
+        const bus = await getBusById(alert.busId);
+        setBusInfo(bus);
+      } catch (_) {}
     }
   };
 
@@ -162,85 +167,83 @@ export default function AlertsManagement() {
             <div className="text-sm mt-1">All clear! No parent alerts match your filters.</div>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Type</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Student</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Parent</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Bus</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Message</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Status</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Time</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((alert) => {
-                const meta = ALERT_TYPE_META[alert.type] || ALERT_TYPE_META.other;
-                const resolved = isResolved(alert);
-                const showResolveBtn = alert.status === "active" || alert.resolved === false || !resolved;
-                console.log("[AlertsManagement] Row -", alert.id, "| status:", alert.status, "| resolved field:", alert.resolved, "| isResolved:", resolved, "| showResolveBtn:", showResolveBtn);
-                return (
-                  <tr key={alert.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <span
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold"
-                        style={{ backgroundColor: meta.bg, color: meta.color }}
-                      >
-                        {meta.emoji} {meta.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {alert.studentName || <span className="text-gray-400 italic">Unknown</span>}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {alert.parentName || <span className="text-gray-400 italic">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {alert.busId || <span className="text-gray-400">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs truncate">
-                      {alert.message || <span className="text-gray-400 italic">No message</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      {resolved ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                          ✅ Resolved
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                          🔴 Active
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                      {formatTime(alert.createdAt)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleViewDetail(alert)}
-                          className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Type</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Student</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Message</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Time</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Status</th>
+                  <th className="text-right px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((alert) => {
+                  const meta = ALERT_TYPE_META[alert.type] || ALERT_TYPE_META.other;
+                  const resolved = isResolved(alert);
+                  const msg = alert.message || "";
+                  const msgShort = msg.length > 40 ? msg.slice(0, 40) + "…" : msg;
+                  return (
+                    <tr key={alert.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold"
+                          style={{ backgroundColor: meta.bg, color: meta.color }}
                         >
-                          View
-                        </button>
-                        {showResolveBtn && (
-                          <button
-                            onClick={() => { console.log("[AlertsManagement] Resolve clicked for id:", alert.id); handleResolve(alert.id); }}
-                            disabled={resolvingId === alert.id}
-                            className="px-2 py-1 rounded-lg text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50"
-                          >
-                            {resolvingId === alert.id ? "⏳ Resolving…" : "✅ Resolve"}
-                          </button>
+                          {meta.emoji} {meta.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+                        {alert.studentName || <span className="text-gray-400 italic">Unknown</span>}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 max-w-xs">
+                        {msg ? (
+                          <span title={msg.length > 40 ? msg : undefined}>{msgShort}</span>
+                        ) : (
+                          <span className="text-gray-400 italic">No message</span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                        {formatTime(alert.createdAt)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {resolved ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                            ✅ Resolved
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                            🔴 Active
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right">
+                        <div className="inline-flex gap-2">
+                          <button
+                            onClick={() => handleViewDetail(alert)}
+                            className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                          >
+                            View
+                          </button>
+                          {!resolved && (
+                            <button
+                              onClick={() => handleResolve(alert.id)}
+                              disabled={resolvingId === alert.id}
+                              className="px-2 py-1 rounded-lg text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50"
+                            >
+                              {resolvingId === alert.id ? "⏳…" : "✅ Resolve"}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -251,7 +254,7 @@ export default function AlertsManagement() {
             <div className="flex items-center justify-between p-5 border-b border-gray-200">
               <h2 className="text-lg font-bold text-gray-900">Alert Details</h2>
               <button
-                onClick={() => { setDetailAlert(null); setParentInfo(null); }}
+                onClick={() => { setDetailAlert(null); setParentInfo(null); setBusInfo(null); }}
                 className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
               >
                 ×
@@ -281,10 +284,23 @@ export default function AlertsManagement() {
               </div>
 
               {/* Bus */}
-              <div>
-                <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Bus</div>
-                <div className="text-gray-900">{detailAlert.busId || "—"}</div>
-              </div>
+              {detailAlert.busId && (
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Bus</div>
+                  {busInfo ? (
+                    <div className="bg-gray-50 rounded-lg p-3 space-y-1 text-sm text-gray-700">
+                      {busInfo.number && <div><span className="font-medium">Number:</span> {busInfo.number}</div>}
+                      {busInfo.plate && <div><span className="font-medium">Plate:</span> {busInfo.plate}</div>}
+                      {busInfo.routeName && <div><span className="font-medium">Route:</span> {busInfo.routeName}</div>}
+                      {!busInfo.number && !busInfo.plate && !busInfo.routeName && (
+                        <div className="text-gray-400">Bus ID: {detailAlert.busId}</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-gray-600 text-sm">{detailAlert.busId}</div>
+                  )}
+                </div>
+              )}
 
               {/* Message */}
               {detailAlert.message && (
@@ -352,14 +368,14 @@ export default function AlertsManagement() {
             {/* Footer */}
             <div className="flex justify-end gap-3 p-5 border-t border-gray-200">
               <button
-                onClick={() => { setDetailAlert(null); setParentInfo(null); }}
+                onClick={() => { setDetailAlert(null); setParentInfo(null); setBusInfo(null); }}
                 className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
               >
                 Close
               </button>
               {!isResolved(detailAlert) && (
                 <button
-                  onClick={() => { console.log("[AlertsManagement] Modal resolve clicked for id:", detailAlert.id); handleResolve(detailAlert.id); }}
+                  onClick={() => handleResolve(detailAlert.id)}
                   disabled={resolvingId === detailAlert.id}
                   className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
                   style={{ backgroundColor: "#059669" }}

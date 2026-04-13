@@ -239,6 +239,12 @@ export const getParentInfo = async (parentUid) => {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 };
 
+export const getBusById = async (busId) => {
+  if (!busId) return null;
+  const snap = await getDoc(doc(db, "buses", busId));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+};
+
 // ─── Stats ───────────────────────────────────────────────────────────────────
 export const getDashboardStats = async () => {
   const [students, buses, drivers, routes] = await Promise.all([
