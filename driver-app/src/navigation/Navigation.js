@@ -13,7 +13,7 @@ import AttendanceHistoryScreen from "../screens/AppStack/AttendanceHistoryScreen
 import GPSTrackingScreen from "../screens/AppStack/GPSTrackingScreen";
 import ProfileScreen from "../screens/AppStack/ProfileScreen";
 import AlertsScreen from "../screens/AppStack/AlertsScreen";
-import { getAssignedBus, getAlertCount } from "../services/firebaseService";
+import { getAssignedBus, subscribeToAlertsForBus } from "../services/firebaseService";
 
 const AuthStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -33,19 +33,17 @@ function AppNavigator() {
 
   useEffect(() => {
     if (!user?.uid) return;
-    let interval;
-    const fetchCount = async () => {
-      try {
-        const bus = await getAssignedBus(user.uid);
-        if (bus) {
-          const count = await getAlertCount(bus.id);
-          setAlertBadge(count);
-        }
-      } catch (_) {}
-    };
-    fetchCount();
-    interval = setInterval(fetchCount, 30000);
-    return () => clearInterval(interval);
+    let unsub;
+    getAssignedBus(user.uid)
+      .then((bus) => {
+        if (!bus) return;
+        unsub = subscribeToAlertsForBus(bus.id, (alerts) => {
+          const unseen = alerts.filter((a) => !a.seenByDriver).length;
+          setAlertBadge(unseen);
+        });
+      })
+      .catch(() => {});
+    return () => unsub && unsub();
   }, [user?.uid]);
 
   return (
