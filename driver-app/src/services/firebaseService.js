@@ -86,10 +86,47 @@ export const updateDriverProfile = async (uid, data) =>
 
 // ─── Assigned Route & Students ────────────────────────────────────────────────
 export const getAssignedBus = async (driverId) => {
-  const q = query(collection(db, "buses"), where("driverId", "==", driverId));
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  return { id: snap.docs[0].id, ...snap.docs[0].data() };
+  console.log("[getAssignedBus] Searching for bus with driverId:", JSON.stringify(driverId));
+  try {
+    const q = query(collection(db, "buses"), where("driverId", "==", driverId));
+    const snap = await getDocs(q);
+    console.log("[getAssignedBus] Query returned", snap.size, "result(s)");
+    if (snap.empty) {
+      console.log("[getAssignedBus] No bus found for driverId:", driverId, "— trying fallback fetch");
+      return null;
+    }
+    const bus = { id: snap.docs[0].id, ...snap.docs[0].data() };
+    console.log("[getAssignedBus] Found bus:", bus.id, bus.number);
+    return bus;
+  } catch (err) {
+    console.error("[getAssignedBus] Query error:", err.code, err.message);
+    throw err;
+  }
+};
+
+// Fetch every bus document and filter client-side (fallback / debug helper).
+export const getAllBuses = async () => {
+  console.log("[getAllBuses] Fetching all buses for client-side filtering");
+  const snap = await getDocs(collection(db, "buses"));
+  const buses = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  console.log("[getAllBuses] Total buses:", buses.length);
+  if (__DEV__) {
+    buses.forEach((b) => console.log("[getAllBuses] Bus:", b.id, "| driverId:", JSON.stringify(b.driverId)));
+  }
+  return buses;
+};
+
+export const getAssignedBusFallback = async (driverId) => {
+  console.log("[getAssignedBusFallback] Filtering all buses for driverId:", JSON.stringify(driverId));
+  const buses = await getAllBuses();
+  const trimmedId = (driverId || "").trim();
+  const match = buses.find((b) => (b.driverId || "").trim() === trimmedId);
+  if (match) {
+    console.log("[getAssignedBusFallback] Match found:", match.id, match.number);
+  } else {
+    console.log("[getAssignedBusFallback] No matching bus found after client-side filter");
+  }
+  return match || null;
 };
 
 export const getStudentsForBus = async (busId) => {

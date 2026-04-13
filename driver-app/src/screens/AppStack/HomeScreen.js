@@ -4,7 +4,7 @@ import {
   StyleSheet, Alert, ActivityIndicator, RefreshControl,
 } from "react-native";
 import { useAuth } from "../../context/AuthContext";
-import { getAssignedBus, subscribeToStudentsForBus } from "../../services/firebaseService";
+import { getAssignedBus, getAssignedBusFallback, subscribeToStudentsForBus } from "../../services/firebaseService";
 
 export default function HomeScreen({ navigation }) {
   const { user, driverProfile } = useAuth();
@@ -15,11 +15,32 @@ export default function HomeScreen({ navigation }) {
 
   const loadBus = async () => {
     try {
-      const assignedBus = await getAssignedBus(user.uid);
+      console.log("[HomeScreen] Loading bus — user.uid:", JSON.stringify(user?.uid));
+      console.log("[HomeScreen] driverProfile:", JSON.stringify(driverProfile));
+
+      // Primary query: Firestore where("driverId", "==", uid)
+      let assignedBus = await getAssignedBus(user.uid);
+
+      // Fallback: fetch all buses and filter client-side to catch whitespace/type mismatches
+      if (!assignedBus) {
+        console.log("[HomeScreen] Primary query returned null — trying client-side fallback");
+        assignedBus = await getAssignedBusFallback(user.uid);
+      }
+
+      if (assignedBus) {
+        console.log("[HomeScreen] Bus resolved:", assignedBus.id, assignedBus.number);
+      } else {
+        console.log("[HomeScreen] No bus found for UID:", user?.uid);
+      }
+
       setBus(assignedBus);
       return assignedBus;
     } catch (err) {
-      Alert.alert("Error", "Could not load your assigned bus.");
+      console.error("[HomeScreen] Failed to load bus:", err.code, err.message);
+      Alert.alert(
+        "Error loading bus",
+        `Could not load your assigned bus.\nCode: ${err.code || "unknown"}\n${err.message || ""}`,
+      );
       return null;
     } finally {
       setLoadingBus(false);
@@ -65,6 +86,7 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.noBusCard}>
             <Text style={styles.noBusText}>No bus assigned yet.</Text>
             <Text style={styles.noBusSubText}>Contact admin for bus assignment.</Text>
+            <Text style={styles.debugText}>Debug — UID: {user?.uid || "unknown"}</Text>
           </View>
         )}
       </View>
@@ -131,6 +153,7 @@ const styles = StyleSheet.create({
   noBusCard: { backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 12, padding: 14, alignItems: "center" },
   noBusText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
   noBusSubText: { color: "rgba(255,255,255,0.75)", fontSize: 13, marginTop: 4 },
+  debugText: { color: "rgba(255,255,255,0.6)", fontSize: 11, marginTop: 6 },
   actionsRow: { flexDirection: "row", justifyContent: "space-around", padding: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#E5E7EB" },
   actionBtn: { alignItems: "center", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20 },
   actionEmoji: { fontSize: 24 },
