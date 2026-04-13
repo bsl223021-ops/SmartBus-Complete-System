@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { onAuthChange, getDriverProfile } from "../services/firebaseService";
+import { onAuthChange, getDriverProfile, syncDriverDocument } from "../services/firebaseService";
 
 const AuthContext = createContext(null);
 
@@ -13,6 +13,7 @@ export function AuthProvider({ children }) {
       setUser(firebaseUser);
       if (firebaseUser) {
         try {
+          await syncDriverDocument(firebaseUser);
           const profile = await getDriverProfile(firebaseUser.uid);
           setDriverProfile(profile);
         } catch (err) {
