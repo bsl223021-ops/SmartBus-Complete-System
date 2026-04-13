@@ -127,6 +127,13 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.actionText}>GPS Track</Text>
         </TouchableOpacity>
         <TouchableOpacity
+          style={[styles.actionBtn, { backgroundColor: "#DC2626" }]}
+          onPress={() => navigation.navigate("Alerts")}
+        >
+          <Text style={styles.actionEmoji}>🔔</Text>
+          <Text style={styles.actionText}>Alerts</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[styles.actionBtn, { backgroundColor: "#7C3AED" }]}
           onPress={() => navigation.navigate("AttendanceHistory")}
         >

@@ -344,6 +344,51 @@ export const endTrip = async ({ busId, driverId, totalStudents }) => {
   return { id: tripRef.id, ...tripData };
 };
 
+// ─── Alerts ──────────────────────────────────────────────────────────────────
+export const subscribeToAlertsForBus = (busId, callback) => {
+  return onSnapshot(
+    query(
+      collection(db, "alerts"),
+      where("busId", "==", busId),
+      orderBy("createdAt", "desc")
+    ),
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (err) => {
+      console.error("[subscribeToAlertsForBus] Error:", err.message);
+      // Fallback without orderBy if index is missing
+      if (err.code === "failed-precondition") {
+        onSnapshot(
+          query(collection(db, "alerts"), where("busId", "==", busId)),
+          (snap) => {
+            const sorted = snap.docs
+              .map((d) => ({ id: d.id, ...d.data() }))
+              .sort((a, b) => {
+                const ta = a.createdAt?.toMillis?.() ?? 0;
+                const tb = b.createdAt?.toMillis?.() ?? 0;
+                return tb - ta;
+              });
+            callback(sorted);
+          }
+        );
+      }
+    }
+  );
+};
+
+export const markAlertSeen = async (alertId) => {
+  return updateDoc(doc(db, "alerts", alertId), { seenByDriver: true });
+};
+
+export const getAlertCount = async (busId) => {
+  const q = query(
+    collection(db, "alerts"),
+    where("busId", "==", busId),
+    where("seenByDriver", "==", false)
+  );
+  const snap = await getDocs(q);
+  return snap.size;
+};
+
 // ─── GPS ──────────────────────────────────────────────────────────────────────
 export const updateBusLocation = async (busId, driverId, latitude, longitude) => {
   const locationData = {

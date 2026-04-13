@@ -11,6 +11,7 @@ import AttendanceTracking from "./pages/AttendanceTracking";
 import DriverManagement from "./pages/DriverManagement";
 import TripManagement from "./pages/TripManagement";
 import ProfilePage from "./pages/ProfilePage";
+import AlertsManagement from "./pages/AlertsManagement";
 
 function ProtectedLayout({ children }) {
   return (
@@ -85,6 +86,10 @@ export default function App() {
         <Route
           path="/profile"
           element={user ? <ProtectedLayout><ProfilePage /></ProtectedLayout> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/alerts"
+          element={user ? <ProtectedLayout><AlertsManagement /></ProtectedLayout> : <Navigate to="/login" replace />}
         />
         <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
       </Routes>

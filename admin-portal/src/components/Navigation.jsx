@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { logoutUser } from "../services/authService";
+import { subscribeToAlerts } from "../services/firebaseService";
 
-const links = [
+const NAV_LINKS = [
   {
     to: "/dashboard",
     label: "Dashboard",
@@ -67,6 +68,15 @@ const links = [
     ),
   },
   {
+    to: "/alerts",
+    label: "Alerts",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+    ),
+  },
+  {
     to: "/profile",
     label: "Profile",
     icon: (
@@ -81,6 +91,17 @@ const links = [
 export default function Navigation() {
   const navigate = useNavigate();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [unresolvedCount, setUnresolvedCount] = useState(0);
+
+  useEffect(() => {
+    const unsub = subscribeToAlerts((alerts) => {
+      const count = alerts.filter(
+        (a) => a.status !== "resolved" && a.resolved !== true
+      ).length;
+      setUnresolvedCount(count);
+    });
+    return unsub;
+  }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -114,7 +135,7 @@ export default function Navigation() {
 
       {/* Nav links */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {links.map((link) => (
+        {NAV_LINKS.map((link) => (
           <NavLink
             key={link.to}
             to={link.to}
@@ -130,7 +151,12 @@ export default function Navigation() {
             }
           >
             {link.icon}
-            <span>{link.label}</span>
+            <span className="flex-1">{link.label}</span>
+            {link.to === "/alerts" && unresolvedCount > 0 && (
+              <span className="bg-red-600 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center leading-tight">
+                {unresolvedCount > 99 ? "99+" : unresolvedCount}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

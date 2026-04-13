@@ -202,6 +202,43 @@ export const sendNotification = async (data) => {
   });
 };
 
+// ─── Alerts ──────────────────────────────────────────────────────────────────
+export const subscribeToAlerts = (callback) => {
+  return onSnapshot(
+    query(collection(db, "alerts"), orderBy("createdAt", "desc")),
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (err) => {
+      console.error("[subscribeToAlerts] Error:", err.message);
+      if (err.code === "failed-precondition") {
+        onSnapshot(collection(db, "alerts"), (snap) => {
+          const sorted = snap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => {
+              const ta = a.createdAt?.toMillis?.() ?? 0;
+              const tb = b.createdAt?.toMillis?.() ?? 0;
+              return tb - ta;
+            });
+          callback(sorted);
+        });
+      }
+    }
+  );
+};
+
+export const markAlertResolved = async (alertId) => {
+  return updateDoc(doc(db, "alerts", alertId), {
+    status: "resolved",
+    resolved: true,
+    resolvedAt: serverTimestamp(),
+  });
+};
+
+export const getParentInfo = async (parentUid) => {
+  if (!parentUid) return null;
+  const snap = await getDoc(doc(db, "users", parentUid));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+};
+
 // ─── Stats ───────────────────────────────────────────────────────────────────
 export const getDashboardStats = async () => {
   const [students, buses, drivers, routes] = await Promise.all([
