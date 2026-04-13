@@ -11,6 +11,7 @@ import TrackingScreen from "../screens/AppStack/TrackingScreen";
 import NotificationsScreen from "../screens/AppStack/NotificationsScreen";
 import StudentProfileScreen from "../screens/AppStack/StudentProfileScreen";
 import AlertScreen from "../screens/AppStack/AlertScreen";
+import ProfileScreen from "../screens/AppStack/ProfileScreen";
 
 const AuthStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -38,6 +39,7 @@ function AppNavigator() {
             Notifications: "🔔",
             StudentProfile: "👧",
             Alert: "🚨",
+            Profile: "👤",
           };
           return <Text style={{ fontSize: 22 }}>{icons[route.name] || "●"}</Text>;
         },
@@ -47,6 +49,7 @@ function AppNavigator() {
             Notifications: "Alerts",
             StudentProfile: "My Child",
             Alert: "SOS",
+            Profile: "Profile",
           };
           return <Text style={{ color, fontSize: 11 }}>{labels[route.name]}</Text>;
         },
@@ -56,6 +59,7 @@ function AppNavigator() {
       <Tab.Screen name="Notifications" component={NotificationsScreen} />
       <Tab.Screen name="StudentProfile" component={StudentProfileScreen} />
       <Tab.Screen name="Alert" component={AlertScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
