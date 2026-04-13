@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, TextInput, ScrollView,
 } from "react-native";
 import { useAuth } from "../../context/AuthContext";
-import { sendAlert } from "../../services/firebaseService";
+import { sendAlert, getLinkedStudent } from "../../services/firebaseService";
 
 const ALERT_TYPES = [
   { key: "emergency", label: "🚨 Emergency", color: "#DC2626", desc: "Immediate danger or serious incident" },
@@ -18,6 +18,22 @@ export default function AlertScreen() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [studentBusId, setStudentBusId] = useState(null);
+  const [studentLoading, setStudentLoading] = useState(false);
+
+  useEffect(() => {
+    if (!parentProfile?.linkedStudentId) return;
+    setStudentLoading(true);
+    getLinkedStudent(parentProfile.linkedStudentId)
+      .then((student) => {
+        if (student?.busId) setStudentBusId(student.busId);
+      })
+      .catch((err) => {
+        console.error("Failed to load student bus info:", err);
+        Alert.alert("Warning", "Could not load your child's bus information. The alert will still be sent, but without bus details.");
+      })
+      .finally(() => setStudentLoading(false));
+  }, [parentProfile?.linkedStudentId]);
 
   const handleSendAlert = async () => {
     if (!selectedType) {
@@ -25,7 +41,7 @@ export default function AlertScreen() {
       return;
     }
     if (!parentProfile?.linkedStudentId) {
-      Alert.alert("No Student Linked", "Your account is not linked to a student.");
+      Alert.alert("No Student Linked", "Your account is not linked to a student. Please contact school administration.");
       return;
     }
     Alert.alert(
@@ -42,13 +58,18 @@ export default function AlertScreen() {
               await sendAlert(
                 user.uid,
                 parentProfile.linkedStudentId,
-                null,
+                studentBusId,
                 selectedType,
                 message || ALERT_TYPES.find((t) => t.key === selectedType)?.desc || ""
               );
               setSent(true);
             } catch (err) {
-              Alert.alert("Error", err.message);
+              Alert.alert(
+                "Failed to Send Alert",
+                err.code?.includes("permission-denied")
+                  ? "You do not have permission to send alerts. Please ensure you are logged in."
+                  : err.message || "An unexpected error occurred. Please try again."
+              );
             } finally {
               setLoading(false);
             }
@@ -111,11 +132,11 @@ export default function AlertScreen() {
 
       <View style={styles.section}>
         <TouchableOpacity
-          style={[styles.sendBtn, !selectedType && styles.sendBtnDisabled]}
+          style={[styles.sendBtn, (!selectedType || studentLoading) && styles.sendBtnDisabled]}
           onPress={handleSendAlert}
-          disabled={loading || !selectedType}
+          disabled={loading || !selectedType || studentLoading}
         >
-          {loading ? (
+          {loading || studentLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.sendBtnText}>🚨 Send Alert to Administration</Text>
