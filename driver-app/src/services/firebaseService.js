@@ -16,6 +16,7 @@ import {
   getDoc,
   addDoc,
   updateDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -74,6 +75,50 @@ export const registerDriver = async (email, password, name, phone) => {
 
 export const logoutDriver = () => signOut(auth);
 export const onAuthChange = (cb) => onAuthStateChanged(auth, cb);
+
+// ─── Driver Sync ─────────────────────────────────────────────────────────────
+export const syncDriverDocument = async (firebaseUser) => {
+  if (!firebaseUser) return;
+  const { uid, email } = firebaseUser;
+
+  // Check if a driver doc already exists with the correct UID
+  const uidDocRef = doc(db, "drivers", uid);
+  const uidSnap = await getDoc(uidDocRef);
+
+  if (uidSnap.exists()) {
+    // Document already exists with the correct UID — nothing to do
+    return;
+  }
+
+  // Look for an existing driver document that has the same email (old/manual ID)
+  const emailQuery = query(collection(db, "drivers"), where("email", "==", email), limit(1));
+  const emailSnap = await getDocs(emailQuery);
+
+  if (!emailSnap.empty) {
+    const oldDoc = emailSnap.docs[0];
+    // Guard: skip if the found doc is already the UID-keyed document
+    if (oldDoc.id !== uid) {
+      // Preserve all existing fields from the old document
+      const oldData = oldDoc.data();
+      await setDoc(uidDocRef, {
+        ...oldData,
+        email,
+        uid,
+        syncedAt: serverTimestamp(),
+      });
+      // Remove the old document to avoid data duplication
+      await deleteDoc(doc(db, "drivers", oldDoc.id));
+    }
+  } else {
+    // No existing document — create a minimal one with the Auth UID
+    await setDoc(uidDocRef, {
+      email,
+      uid,
+      status: "active",
+      createdAt: serverTimestamp(),
+    });
+  }
+};
 
 // ─── Driver Profile ───────────────────────────────────────────────────────────
 export const getDriverProfile = async (uid) => {
