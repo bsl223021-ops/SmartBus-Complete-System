@@ -202,6 +202,29 @@ export const sendNotification = async (data) => {
   });
 };
 
+// ─── Alerts ──────────────────────────────────────────────────────────────────
+export const getAlerts = async () => {
+  const snap = await getDocs(
+    query(collection(db, "alerts"), orderBy("createdAt", "desc"))
+  );
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+export const updateAlert = async (alertId, data) => {
+  return updateDoc(doc(db, "alerts", alertId), { ...data, updatedAt: serverTimestamp() });
+};
+
+export const deleteAlert = async (alertId) => {
+  return deleteDoc(doc(db, "alerts", alertId));
+};
+
+export const subscribeToAlerts = (callback) => {
+  return onSnapshot(
+    query(collection(db, "alerts"), orderBy("createdAt", "desc")),
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+  );
+};
+
 // ─── Stats ───────────────────────────────────────────────────────────────────
 export const getDashboardStats = async () => {
   const [students, buses, drivers, routes] = await Promise.all([

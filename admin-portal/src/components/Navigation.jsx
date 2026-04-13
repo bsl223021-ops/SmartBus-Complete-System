@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { logoutUser } from "../services/authService";
+import { subscribeToAlerts } from "../services/firebaseService";
 
 const links = [
   {
@@ -67,6 +68,15 @@ const links = [
     ),
   },
   {
+    to: "/alerts",
+    label: "Alerts",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+    ),
+  },
+  {
     to: "/profile",
     label: "Profile",
     icon: (
@@ -81,6 +91,15 @@ const links = [
 export default function Navigation() {
   const navigate = useNavigate();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [openAlertCount, setOpenAlertCount] = useState(0);
+
+  useEffect(() => {
+    const unsub = subscribeToAlerts((alerts) => {
+      const open = alerts.filter((a) => a.status !== "resolved" && a.resolved !== true).length;
+      setOpenAlertCount(open);
+    });
+    return unsub;
+  }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -130,7 +149,15 @@ export default function Navigation() {
             }
           >
             {link.icon}
-            <span>{link.label}</span>
+            <span className="flex-1">{link.label}</span>
+            {link.to === "/alerts" && openAlertCount > 0 && (
+              <span
+                className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+                style={{ background: "#DC2626", color: "#fff", minWidth: 20, textAlign: "center" }}
+              >
+                {openAlertCount}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

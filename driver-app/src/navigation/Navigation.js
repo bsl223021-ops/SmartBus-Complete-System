@@ -12,9 +12,11 @@ import QRScannerScreen from "../screens/AppStack/QRScannerScreen";
 import AttendanceHistoryScreen from "../screens/AppStack/AttendanceHistoryScreen";
 import GPSTrackingScreen from "../screens/AppStack/GPSTrackingScreen";
 import ProfileScreen from "../screens/AppStack/ProfileScreen";
+import AlertsScreen from "../screens/AppStack/AlertsScreen";
 
 const AuthStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const AppStack = createNativeStackNavigator();
 
 function AuthNavigator() {
   return (
@@ -25,7 +27,7 @@ function AuthNavigator() {
   );
 }
 
-function AppNavigator() {
+function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -61,6 +63,15 @@ function AppNavigator() {
       <Tab.Screen name="GPSTracking" component={GPSTrackingScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
+  );
+}
+
+function AppNavigator() {
+  return (
+    <AppStack.Navigator screenOptions={{ headerShown: false }}>
+      <AppStack.Screen name="Tabs" component={TabNavigator} />
+      <AppStack.Screen name="Alerts" component={AlertsScreen} />
+    </AppStack.Navigator>
   );
 }
 

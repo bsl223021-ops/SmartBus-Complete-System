@@ -4,12 +4,13 @@ import {
   StyleSheet, Alert, ActivityIndicator, RefreshControl,
 } from "react-native";
 import { useAuth } from "../../context/AuthContext";
-import { getAssignedBus, subscribeToStudentsForBus } from "../../services/firebaseService";
+import { getAssignedBus, subscribeToStudentsForBus, subscribeToAlertsForBus } from "../../services/firebaseService";
 
 export default function HomeScreen({ navigation }) {
   const { user, driverProfile } = useAuth();
   const [bus, setBus] = useState(null);
   const [students, setStudents] = useState([]);
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [loadingBus, setLoadingBus] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -31,13 +32,21 @@ export default function HomeScreen({ navigation }) {
   };
 
   useEffect(() => {
-    let unsub;
+    let unsubStudents;
+    let unsubAlerts;
     loadBus().then((assignedBus) => {
       if (assignedBus) {
-        unsub = subscribeToStudentsForBus(assignedBus.id, setStudents);
+        unsubStudents = subscribeToStudentsForBus(assignedBus.id, setStudents);
+        unsubAlerts = subscribeToAlertsForBus(assignedBus.id, (alerts) => {
+          const unread = alerts.filter((a) => !a.viewedByDriver).length;
+          setUnreadAlerts(unread);
+        });
       }
     });
-    return () => unsub && unsub();
+    return () => {
+      unsubStudents && unsubStudents();
+      unsubAlerts && unsubAlerts();
+    };
   }, []);
 
   const onRefresh = async () => {
@@ -95,6 +104,20 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.actionEmoji}>📋</Text>
           <Text style={styles.actionText}>History</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionBtn, { backgroundColor: "#DC2626" }]}
+          onPress={() => navigation.navigate("Alerts")}
+        >
+          <View>
+            <Text style={styles.actionEmoji}>🔔</Text>
+            {unreadAlerts > 0 && (
+              <View style={styles.alertDot}>
+                <Text style={styles.alertDotText}>{unreadAlerts}</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.actionText}>Alerts</Text>
+        </TouchableOpacity>
       </View>
 
       <Text style={styles.sectionTitle}>Students ({students.length})</Text>
@@ -148,4 +171,17 @@ const styles = StyleSheet.create({
   studentGrade: { fontSize: 13, color: "#6B7280" },
   empty: { alignItems: "center", paddingVertical: 40 },
   emptyText: { color: "#9CA3AF", fontSize: 15 },
+  alertDot: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 2,
+  },
+  alertDotText: { color: "#DC2626", fontSize: 9, fontWeight: "bold" },
 });

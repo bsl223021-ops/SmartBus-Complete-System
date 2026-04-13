@@ -315,3 +315,50 @@ export const updateBusLocation = async (busId, driverId, latitude, longitude) =>
     lastLocationUpdate: serverTimestamp(),
   });
 };
+
+// ─── Alerts ──────────────────────────────────────────────────────────────────
+export const getAlertsForBus = async (busId) => {
+  const q = query(
+    collection(db, "alerts"),
+    where("busId", "==", busId),
+    orderBy("createdAt", "desc")
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+export const subscribeToAlertsForBus = (busId, callback) => {
+  let activeUnsub = onSnapshot(
+    query(
+      collection(db, "alerts"),
+      where("busId", "==", busId),
+      orderBy("createdAt", "desc")
+    ),
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (err) => {
+      if (err.code === "failed-precondition") {
+        activeUnsub = onSnapshot(
+          query(collection(db, "alerts"), where("busId", "==", busId)),
+          (snap) => {
+            const sorted = snap.docs
+              .map((d) => ({ id: d.id, ...d.data() }))
+              .sort((a, b) => {
+                const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                return tb - ta;
+              });
+            callback(sorted);
+          }
+        );
+      }
+    }
+  );
+  return () => activeUnsub && activeUnsub();
+};
+
+export const markAlertAsViewed = async (alertId) => {
+  return updateDoc(doc(db, "alerts", alertId), {
+    viewedByDriver: true,
+    viewedAt: serverTimestamp(),
+  });
+};
