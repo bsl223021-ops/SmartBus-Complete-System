@@ -38,6 +38,7 @@ export default function NotificationsScreen() {
       alert: "🚨",
       info: "ℹ️",
       location: "📍",
+      trip_completed: "🚌",
     };
     return icons[type] || "🔔";
   };
@@ -73,6 +74,16 @@ export default function NotificationsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.notifTitle}>{item.title || "Notification"}</Text>
                   <Text style={styles.notifBody}>{item.message || item.body}</Text>
+                  {item.type === "trip_completed" && item.details && (
+                    <View style={styles.tripDetails}>
+                      <Text style={styles.tripDetailText}>
+                        🕐 Drop-off: {item.details.endTime}  •  📅 {item.details.date}
+                      </Text>
+                      <Text style={styles.tripDetailText}>
+                        ✅ Present: {item.details.presentCount}  •  ❌ Absent: {item.details.absentCount}
+                      </Text>
+                    </View>
+                  )}
                   <Text style={styles.notifTime}>{formatTime(item.createdAt)}</Text>
                 </View>
                 {!item.read && <View style={styles.unreadDot} />}
@@ -102,4 +113,6 @@ const styles = StyleSheet.create({
   notifBody: { fontSize: 13, color: "#6B7280", lineHeight: 18 },
   notifTime: { fontSize: 11, color: "#9CA3AF", marginTop: 6 },
   unreadDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#059669", marginTop: 4 },
+  tripDetails: { marginTop: 6, padding: 8, backgroundColor: "#ECFDF5", borderRadius: 6 },
+  tripDetailText: { fontSize: 12, color: "#065F46", marginBottom: 2 },
 });

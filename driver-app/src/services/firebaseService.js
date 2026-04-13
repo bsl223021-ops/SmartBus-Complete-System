@@ -341,7 +341,81 @@ export const endTrip = async ({ busId, driverId, totalStudents }) => {
   const tripRef = await addDoc(collection(db, "trips"), tripData);
   console.log("[endTrip] Trip document created:", tripRef.id);
 
+  // Send notifications to all parents on this bus
+  await sendTripCompletionNotifications(busId, driverId, {
+    tripId: tripRef.id,
+    presentCount,
+    absentCount,
+    totalStudents: totalStudents ?? 0,
+    endTime: now,
+    date: today,
+  });
+
   return { id: tripRef.id, ...tripData };
+};
+
+// ─── Trip Completion Notifications ────────────────────────────────────────────
+export const sendTripCompletionNotifications = async (busId, driverId, tripSummary) => {
+  try {
+    console.log("[sendTripCompletionNotifications] Starting for busId:", busId);
+
+    // Get all students on this bus
+    const studentsQuery = query(
+      collection(db, "students"),
+      where("busId", "==", busId)
+    );
+    const studentsSnap = await getDocs(studentsQuery);
+    const students = studentsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+    console.log("[sendTripCompletionNotifications] Found", students.length, "students");
+
+    if (students.length === 0) {
+      console.log("[sendTripCompletionNotifications] No students found, skipping notifications");
+      return;
+    }
+
+    const notificationPromises = students.map(async (student) => {
+      const parentId = student.parentUid || student.parentId;
+      if (!parentId) {
+        console.warn("[sendTripCompletionNotifications] Student has no parentId:", student.id);
+        return;
+      }
+
+      const notification = {
+        type: "trip_completed",
+        parentId,
+        parentUid: parentId,
+        studentId: student.id,
+        studentName: student.name || "Your child",
+        busId,
+        tripId: tripSummary.tripId,
+        title: "🚌 Trip Completed",
+        message: `${student.name || "Your child"} has been safely dropped at school`,
+        details: {
+          presentCount: tripSummary.presentCount,
+          absentCount: tripSummary.absentCount,
+          totalStudents: tripSummary.totalStudents,
+          endTime: tripSummary.endTime,
+          date: tripSummary.date,
+        },
+        read: false,
+        createdAt: serverTimestamp(),
+      };
+
+      try {
+        await addDoc(collection(db, "notifications"), notification);
+        console.log("[sendTripCompletionNotifications] Notification sent to parent:", parentId);
+      } catch (err) {
+        console.error("[sendTripCompletionNotifications] Failed for student:", student.id, err.message);
+      }
+    });
+
+    await Promise.all(notificationPromises);
+    console.log("[sendTripCompletionNotifications] All notifications sent successfully");
+  } catch (err) {
+    console.error("[sendTripCompletionNotifications] Error:", err.message);
+    // Don't throw — trip completion succeeded even if notifications fail
+  }
 };
 
 // ─── Alerts ──────────────────────────────────────────────────────────────────

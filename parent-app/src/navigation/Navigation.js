@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Text } from "react-native";
+import { Text, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
+import { subscribeToNotifications } from "../services/firebaseService";
 
 import LoginScreen from "../screens/AuthStack/LoginScreen";
 import SignUpScreen from "../screens/AuthStack/SignUpScreen";
@@ -26,6 +27,17 @@ function AuthNavigator() {
 }
 
 function AppNavigator() {
+  const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeToNotifications(user.uid, (notifications) => {
+      setUnreadCount(notifications.filter((n) => !n.read).length);
+    });
+    return unsub;
+  }, [user]);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -41,6 +53,23 @@ function AppNavigator() {
             Alert: "🚨",
             Profile: "👤",
           };
+          if (route.name === "Notifications" && unreadCount > 0) {
+            return (
+              <View>
+                <Text style={{ fontSize: 22 }}>{icons[route.name]}</Text>
+                <View style={{
+                  position: "absolute", top: -4, right: -8,
+                  backgroundColor: "#DC2626", borderRadius: 8,
+                  minWidth: 16, height: 16,
+                  justifyContent: "center", alignItems: "center", paddingHorizontal: 2,
+                }}>
+                  <Text style={{ color: "#fff", fontSize: 10, fontWeight: "bold" }}>
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </Text>
+                </View>
+              </View>
+            );
+          }
           return <Text style={{ fontSize: 22 }}>{icons[route.name] || "●"}</Text>;
         },
         tabBarLabel: ({ color }) => {

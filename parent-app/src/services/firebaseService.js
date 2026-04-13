@@ -146,20 +146,59 @@ export const getDriver = async (driverId) => {
 };
 
 // ─── Notifications ────────────────────────────────────────────────────────────
-export const subscribeToNotifications = (userId, callback) => {
-  return onSnapshot(
+export const subscribeToNotifications = (parentId, callback) => {
+  let activeUnsub = onSnapshot(
     query(
       collection(db, "notifications"),
-      where("userId", "==", userId),
+      where("parentId", "==", parentId),
       orderBy("createdAt", "desc"),
       limit(50)
     ),
-    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    (snap) => {
+      console.log("[subscribeToNotifications] Received", snap.size, "notifications");
+      callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    },
+    (err) => {
+      console.error("[subscribeToNotifications] Error:", err.message);
+      // Fallback without orderBy when composite index is missing
+      if (err.code === "failed-precondition") {
+        activeUnsub = onSnapshot(
+          query(collection(db, "notifications"), where("parentId", "==", parentId), limit(50)),
+          (snap) => {
+            const sorted = snap.docs
+              .map((d) => ({ id: d.id, ...d.data() }))
+              .sort((a, b) => {
+                const ta = a.createdAt?.toMillis?.() ?? 0;
+                const tb = b.createdAt?.toMillis?.() ?? 0;
+                return tb - ta;
+              });
+            callback(sorted);
+          },
+          (fallbackErr) => {
+            console.error("[subscribeToNotifications] Fallback error:", fallbackErr.message);
+          }
+        );
+      }
+    }
   );
+  return () => activeUnsub && activeUnsub();
+};
+
+export const getUnreadNotificationCount = async (parentId) => {
+  const q = query(
+    collection(db, "notifications"),
+    where("parentId", "==", parentId),
+    where("read", "==", false)
+  );
+  const snap = await getDocs(q);
+  return snap.size;
 };
 
 export const markNotificationRead = async (notifId) => {
-  return updateDoc(doc(db, "notifications", notifId), { read: true });
+  return updateDoc(doc(db, "notifications", notifId), {
+    read: true,
+    readAt: serverTimestamp(),
+  });
 };
 
 // ─── Alerts ───────────────────────────────────────────────────────────────────
