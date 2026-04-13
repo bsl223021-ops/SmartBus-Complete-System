@@ -19,6 +19,7 @@ export default function AlertScreen() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [studentBusId, setStudentBusId] = useState(null);
+  const [studentName, setStudentName] = useState(null);
   const [studentLoading, setStudentLoading] = useState(false);
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export default function AlertScreen() {
     getLinkedStudent(parentProfile.linkedStudentId)
       .then((student) => {
         if (student?.busId) setStudentBusId(student.busId);
+        if (student?.name) setStudentName(student.name);
       })
       .catch((err) => {
         console.error("Failed to load student bus info:", err);
@@ -60,7 +62,9 @@ export default function AlertScreen() {
                 parentProfile.linkedStudentId,
                 studentBusId,
                 selectedType,
-                message || ALERT_TYPES.find((t) => t.key === selectedType)?.desc || ""
+                message || ALERT_TYPES.find((t) => t.key === selectedType)?.desc || "",
+                parentProfile?.name || null,
+                studentName
               );
               setSent(true);
             } catch (err) {

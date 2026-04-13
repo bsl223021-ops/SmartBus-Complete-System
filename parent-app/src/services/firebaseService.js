@@ -163,14 +163,20 @@ export const markNotificationRead = async (notifId) => {
 };
 
 // ─── Alerts ───────────────────────────────────────────────────────────────────
-export const sendAlert = async (parentUid, studentId, busId, type, message) => {
+export const sendAlert = async (parentUid, studentId, busId, type, message, parentName, studentName) => {
   return addDoc(collection(db, "alerts"), {
     parentUid,
+    parentId: parentUid,
+    parentName: parentName || null,
     studentId,
+    studentName: studentName || null,
     busId,
     type,
     message,
+    status: "active",
     resolved: false,
+    seenByDriver: false,
+    resolvedAt: null,
     createdAt: serverTimestamp(),
   });
 };
