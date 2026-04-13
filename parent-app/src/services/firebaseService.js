@@ -128,7 +128,20 @@ export const subscribeToBusLocation = (busId, callback) => {
 };
 
 export const getBusDetails = async (busId) => {
+  if (!busId) return null;
   const snap = await getDoc(doc(db, "buses", busId));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+};
+
+export const getRoute = async (routeId) => {
+  if (!routeId) return null;
+  const snap = await getDoc(doc(db, "routes", routeId));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+};
+
+export const getDriver = async (driverId) => {
+  if (!driverId) return null;
+  const snap = await getDoc(doc(db, "drivers", driverId));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 };
 

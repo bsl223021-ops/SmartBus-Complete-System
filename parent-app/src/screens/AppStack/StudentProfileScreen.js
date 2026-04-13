@@ -3,13 +3,23 @@ import {
   View, Text, StyleSheet, ActivityIndicator, ScrollView,
 } from "react-native";
 import { useAuth } from "../../context/AuthContext";
-import { getLinkedStudent, getStudentAttendance } from "../../services/firebaseService";
+import {
+  getLinkedStudent,
+  getStudentAttendance,
+  getBusDetails,
+  getRoute,
+  getDriver,
+} from "../../services/firebaseService";
 
 export default function StudentProfileScreen() {
   const { parentProfile } = useAuth();
   const [student, setStudent] = useState(null);
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [bus, setBus] = useState(null);
+  const [route, setRoute] = useState(null);
+  const [driver, setDriver] = useState(null);
+  const [busLoading, setBusLoading] = useState(false);
 
   useEffect(() => {
     if (!parentProfile?.linkedStudentId) {
@@ -23,6 +33,26 @@ export default function StudentProfileScreen() {
         if (s) {
           const att = await getStudentAttendance(s.id, 30);
           setAttendance(att);
+
+          if (s.busId) {
+            setBusLoading(true);
+            try {
+              const b = await getBusDetails(s.busId);
+              setBus(b);
+              if (b) {
+                const [r, d] = await Promise.all([
+                  b.routeId ? getRoute(b.routeId) : Promise.resolve(null),
+                  b.driverId ? getDriver(b.driverId) : Promise.resolve(null),
+                ]);
+                setRoute(r);
+                setDriver(d);
+              }
+            } catch (busErr) {
+              console.error("Failed to load bus/route/driver info:", busErr);
+            } finally {
+              setBusLoading(false);
+            }
+          }
         }
       } catch (err) {
         console.error("Failed to load student profile:", err);
@@ -82,6 +112,75 @@ export default function StudentProfileScreen() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Bus & Route</Text>
+        {busLoading ? (
+          <ActivityIndicator size="small" color="#059669" style={{ paddingVertical: 12 }} />
+        ) : !student.busId ? (
+          <View style={styles.busInfoRow}>
+            <Text style={styles.busInfoEmoji}>🚌</Text>
+            <Text style={styles.busInfoValue}>Not Assigned</Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.busInfoRow}>
+              <Text style={styles.busInfoEmoji}>🚌</Text>
+              <Text style={styles.busInfoLabel}>Bus Number</Text>
+              <Text style={styles.busInfoValue}>{bus?.number || "—"}</Text>
+            </View>
+            <View style={styles.busInfoRow}>
+              <Text style={styles.busInfoEmoji}>🚗</Text>
+              <Text style={styles.busInfoLabel}>License Plate</Text>
+              <Text style={styles.busInfoValue}>{bus?.licensePlate || "—"}</Text>
+            </View>
+            <View style={styles.busInfoRow}>
+              <Text style={styles.busInfoEmoji}>👤</Text>
+              <Text style={styles.busInfoLabel}>Driver</Text>
+              <Text style={styles.busInfoValue}>{driver?.name || "—"}</Text>
+            </View>
+            <View style={styles.busInfoRow}>
+              <Text style={styles.busInfoEmoji}>📞</Text>
+              <Text style={styles.busInfoLabel}>Driver Phone</Text>
+              <Text style={styles.busInfoValue}>{driver?.phone || "—"}</Text>
+            </View>
+            <View style={styles.busDivider} />
+            <View style={styles.busInfoRow}>
+              <Text style={styles.busInfoEmoji}>🗺️</Text>
+              <Text style={styles.busInfoLabel}>Route</Text>
+              <Text style={styles.busInfoValue}>{route?.name || "N/A"}</Text>
+            </View>
+            <View style={styles.busInfoRow}>
+              <Text style={styles.busInfoEmoji}>📍</Text>
+              <Text style={styles.busInfoLabel}>From → To</Text>
+              <Text style={styles.busInfoValue}>
+                {route ? `${route.startPoint || "—"} → ${route.endPoint || "—"}` : "N/A"}
+              </Text>
+            </View>
+            <View style={styles.busInfoRow}>
+              <Text style={styles.busInfoEmoji}>🛑</Text>
+              <Text style={styles.busInfoLabel}>Stoppages</Text>
+              <Text style={styles.busInfoValue}>
+                {route?.stoppages?.length > 0 ? route.stoppages.join(", ") : "—"}
+              </Text>
+            </View>
+            <View style={styles.busInfoRow}>
+              <Text style={styles.busInfoEmoji}>⏱️</Text>
+              <Text style={styles.busInfoLabel}>Duration</Text>
+              <Text style={styles.busInfoValue}>
+                {route?.duration ? `${route.duration} min` : "—"}
+              </Text>
+            </View>
+            <View style={styles.busInfoRow}>
+              <Text style={styles.busInfoEmoji}>📏</Text>
+              <Text style={styles.busInfoLabel}>Distance</Text>
+              <Text style={styles.busInfoValue}>
+                {route?.distance ? `${route.distance} km` : "—"}
+              </Text>
+            </View>
+          </>
+        )}
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Attendance History (30 days)</Text>
         {attendance.length === 0 ? (
           <Text style={styles.noData}>No attendance records available.</Text>
@@ -126,4 +225,9 @@ const styles = StyleSheet.create({
   attTime: { fontSize: 12, color: "#9CA3AF", marginRight: 10 },
   attDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
   attStatus: { fontSize: 13, fontWeight: "600", width: 56, textAlign: "right" },
+  busInfoRow: { flexDirection: "row", alignItems: "flex-start", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#F3F4F6" },
+  busInfoEmoji: { fontSize: 16, width: 26 },
+  busInfoLabel: { flex: 1, fontSize: 13, color: "#6B7280" },
+  busInfoValue: { fontSize: 13, fontWeight: "600", color: "#1F2937", flexShrink: 1, textAlign: "right", maxWidth: "55%" },
+  busDivider: { height: 1, backgroundColor: "#E5E7EB", marginVertical: 8 },
 });
