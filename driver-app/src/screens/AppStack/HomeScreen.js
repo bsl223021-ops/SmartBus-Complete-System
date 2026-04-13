@@ -12,13 +12,21 @@ export default function HomeScreen({ navigation }) {
   const [students, setStudents] = useState([]);
   const [loadingBus, setLoadingBus] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({ uid: null, resultCount: null, error: null });
 
   const loadBus = async () => {
+    console.log("[HomeScreen] loadBus called");
+    console.log("[HomeScreen] user.uid:", user?.uid);
+    setDebugInfo((prev) => ({ ...prev, uid: user?.uid || "undefined", error: null }));
     try {
       const assignedBus = await getAssignedBus(user.uid);
+      console.log("[HomeScreen] getAssignedBus returned:", assignedBus ? `bus id=${assignedBus.id}` : "null");
+      setDebugInfo((prev) => ({ ...prev, resultCount: assignedBus ? 1 : 0 }));
       setBus(assignedBus);
       return assignedBus;
     } catch (err) {
+      console.error("[HomeScreen] loadBus error:", err.message);
+      setDebugInfo((prev) => ({ ...prev, error: err.message, resultCount: 0 }));
       Alert.alert("Error", "Could not load your assigned bus.");
       return null;
     } finally {
@@ -98,6 +106,16 @@ export default function HomeScreen({ navigation }) {
         data={students}
         keyExtractor={(item) => item.id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        ListHeaderComponent={
+          <View style={styles.debugContainer}>
+            <Text style={styles.debugTitle} accessibilityLabel="Debug Info section">🔍 Debug Info</Text>
+            <Text style={styles.debugText} accessibilityLabel={`Current user UID: ${debugInfo.uid ?? "loading"}`}>UID: {debugInfo.uid ?? "loading..."}</Text>
+            <Text style={styles.debugText} accessibilityLabel={`Bus query results: ${debugInfo.resultCount ?? "pending"}`}>Query results: {debugInfo.resultCount ?? "pending"}</Text>
+            {debugInfo.error ? (
+              <Text style={styles.debugError} accessibilityLabel={`Error: ${debugInfo.error}`}>Error: {debugInfo.error}</Text>
+            ) : null}
+          </View>
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyText}>No students assigned to this bus.</Text>
@@ -144,4 +162,8 @@ const styles = StyleSheet.create({
   studentGrade: { fontSize: 13, color: "#6B7280" },
   empty: { alignItems: "center", paddingVertical: 40 },
   emptyText: { color: "#9CA3AF", fontSize: 15 },
+  debugContainer: { margin: 16, marginBottom: 8, backgroundColor: "#FEF9C3", borderRadius: 10, padding: 12, borderWidth: 1, borderColor: "#FDE047" },
+  debugTitle: { fontSize: 14, fontWeight: "bold", color: "#854D0E", marginBottom: 6 },
+  debugText: { fontSize: 12, color: "#713F12", marginBottom: 2 },
+  debugError: { fontSize: 12, color: "#DC2626", marginTop: 4 },
 });

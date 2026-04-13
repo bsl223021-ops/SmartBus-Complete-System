@@ -86,10 +86,23 @@ export const updateDriverProfile = async (uid, data) =>
 
 // ─── Assigned Route & Students ────────────────────────────────────────────────
 export const getAssignedBus = async (driverId) => {
-  const q = query(collection(db, "buses"), where("driverId", "==", driverId));
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  return { id: snap.docs[0].id, ...snap.docs[0].data() };
+  console.log("[getAssignedBus] Searching for bus with driverId:", driverId);
+  console.log("[getAssignedBus] Query: collection=buses, where driverId ==", driverId);
+  try {
+    const q = query(collection(db, "buses"), where("driverId", "==", driverId));
+    const snap = await getDocs(q);
+    console.log("[getAssignedBus] Query returned", snap.size, "result(s)");
+    if (snap.empty) {
+      console.log("[getAssignedBus] No bus found for driverId:", driverId);
+      return null;
+    }
+    const bus = { id: snap.docs[0].id, ...snap.docs[0].data() };
+    console.log("[getAssignedBus] Found bus:", bus.id, bus.number);
+    return bus;
+  } catch (err) {
+    console.error("[getAssignedBus] Error executing query:", err.message, err.code);
+    throw err;
+  }
 };
 
 export const getStudentsForBus = async (busId) => {
