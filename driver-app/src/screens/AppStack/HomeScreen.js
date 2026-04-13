@@ -111,37 +111,41 @@ export default function HomeScreen({ navigation }) {
         )}
       </View>
 
-      <View style={styles.actionsRow}>
+      <View style={styles.actionsGrid}>
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: "#1D4ED8" }]}
+            onPress={() => navigation.navigate("QRScanner")}
+          >
+            <Text style={styles.actionEmoji}>📷</Text>
+            <Text style={styles.actionText}>Scan QR</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: "#059669" }]}
+            onPress={() => navigation.navigate("GPSTracking")}
+          >
+            <Text style={styles.actionEmoji}>📍</Text>
+            <Text style={styles.actionText}>GPS Track</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: "#DC2626" }]}
+            onPress={() => navigation.navigate("Alerts")}
+          >
+            <Text style={styles.actionEmoji}>🔔</Text>
+            <Text style={styles.actionText}>Alerts</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: "#7C3AED" }]}
+            onPress={() => navigation.navigate("AttendanceHistory")}
+          >
+            <Text style={styles.actionEmoji}>📋</Text>
+            <Text style={styles.actionText}>History</Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: "#1D4ED8" }]}
-          onPress={() => navigation.navigate("QRScanner")}
-        >
-          <Text style={styles.actionEmoji}>📷</Text>
-          <Text style={styles.actionText}>Scan QR</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: "#059669" }]}
-          onPress={() => navigation.navigate("GPSTracking")}
-        >
-          <Text style={styles.actionEmoji}>📍</Text>
-          <Text style={styles.actionText}>GPS Track</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: "#DC2626" }]}
-          onPress={() => navigation.navigate("Alerts")}
-        >
-          <Text style={styles.actionEmoji}>🔔</Text>
-          <Text style={styles.actionText}>Alerts</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: "#7C3AED" }]}
-          onPress={() => navigation.navigate("AttendanceHistory")}
-        >
-          <Text style={styles.actionEmoji}>📋</Text>
-          <Text style={styles.actionText}>History</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: "#DC2626" }, endingTrip && styles.actionBtnDisabled]}
+          style={[styles.actionBtnFull, { backgroundColor: "#DC2626" }, endingTrip && styles.actionBtnDisabled]}
           onPress={handleEndTrip}
           disabled={endingTrip}
         >
@@ -188,11 +192,13 @@ const styles = StyleSheet.create({
   noBusCard: { backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 12, padding: 14, alignItems: "center" },
   noBusText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
   noBusSubText: { color: "rgba(255,255,255,0.75)", fontSize: 13, marginTop: 4 },
-  actionsRow: { flexDirection: "row", justifyContent: "space-around", padding: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#E5E7EB" },
-  actionBtn: { alignItems: "center", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16 },
+  actionsGrid: { padding: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#E5E7EB", gap: 10 },
+  actionRow: { flexDirection: "row", gap: 10, justifyContent: "space-between" },
+  actionBtn: { flex: 1, alignItems: "center", borderRadius: 12, paddingVertical: 14, paddingHorizontal: 12, elevation: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+  actionBtnFull: { width: "100%", alignItems: "center", borderRadius: 12, paddingVertical: 14, paddingHorizontal: 12, elevation: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
   actionBtnDisabled: { opacity: 0.6 },
-  actionEmoji: { fontSize: 24 },
-  actionText: { color: "#fff", fontSize: 12, fontWeight: "600", marginTop: 4 },
+  actionEmoji: { fontSize: 28, marginBottom: 6 },
+  actionText: { color: "#fff", fontSize: 13, fontWeight: "600", textAlign: "center" },
   sectionTitle: { fontSize: 16, fontWeight: "bold", color: "#374151", padding: 16, paddingBottom: 8 },
   studentCard: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", marginHorizontal: 16, marginBottom: 8, borderRadius: 12, padding: 14 },
   avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#DBEAFE", justifyContent: "center", alignItems: "center", marginRight: 12 },

@@ -130,7 +130,7 @@ export default function StudentProfileScreen() {
             <View style={styles.busInfoRow}>
               <Text style={styles.busInfoEmoji}>🚗</Text>
               <Text style={styles.busInfoLabel}>License Plate</Text>
-              <Text style={styles.busInfoValue}>{bus?.licensePlate || "—"}</Text>
+              <Text style={styles.busInfoValue}>{bus?.plateNumber || bus?.licensePlate || "—"}</Text>
             </View>
             <View style={styles.busInfoRow}>
               <Text style={styles.busInfoEmoji}>👤</Text>
