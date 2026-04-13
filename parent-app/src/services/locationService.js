@@ -11,3 +11,30 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
+
+// Returns compass bearing in degrees (0–360) from point 1 → point 2
+export const getBearing = (lat1, lon1, lat2, lon2) => {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const dLon = toRad(lon2 - lon1);
+  const y = Math.sin(dLon) * Math.cos(toRad(lat2));
+  const x =
+    Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+    Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
+  const bearing = (Math.atan2(y, x) * 180) / Math.PI;
+  return (bearing + 360) % 360;
+};
+
+// Returns a human-readable compass direction label from a bearing in degrees
+export const getDirectionLabel = (bearing) => {
+  const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  return dirs[Math.round(bearing / 45) % 8];
+};
+
+// Returns a status string based on distance (km) and optional speed (m/s)
+export const getBusStatus = (distanceKm, speedMs) => {
+  const speedKmh = speedMs != null ? speedMs * 3.6 : null;
+  if (distanceKm < 0.2) return "arriving";
+  if (distanceKm < 1) return "nearby";
+  if (speedKmh != null && speedKmh < 1) return "stopped";
+  return "on_way";
+};
