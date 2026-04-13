@@ -249,8 +249,14 @@ export default function AlertsManagement() {
 
       {/* Detail Modal */}
       {detailAlert && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+          onClick={() => { setDetailAlert(null); setParentInfo(null); setBusInfo(null); }}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between p-5 border-b border-gray-200">
               <h2 className="text-lg font-bold text-gray-900">Alert Details</h2>
               <button
