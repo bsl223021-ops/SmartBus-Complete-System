@@ -132,7 +132,11 @@ export const getDrivers = async () => {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
 
-export const addDriver = async (data) => {
+export const addDriver = async (data, uid) => {
+  if (uid) {
+    console.log("[addDriver] Using provided Auth UID as document ID:", uid);
+    return setDoc(doc(db, "drivers", uid), { ...data, createdAt: serverTimestamp() });
+  }
   return addDoc(collection(db, "drivers"), { ...data, createdAt: serverTimestamp() });
 };
 
